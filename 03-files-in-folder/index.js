@@ -16,12 +16,12 @@ const { promises: fsP } = require('fs');
 })();
 
 const printFileData = (file) => {
-  const folderPath = path.join(__dirname, dir, file.name);
+  const srcFile = path.join(__dirname, dir, file.name);
 
-  fs.stat(folderPath, (err, stats) => {
+  fs.stat(srcFile, (err, stats) => {
     if (err) stderr.write(`${err}`);
     else if (stats.isFile) {
-      let extensio = path.extname(folderPath).slice(1);
+      let extensio = path.extname(srcFile).slice(1);
       let data = `${file.name} - ${extensio} - ${stats.size / 1024}kb`;
       stdout.write(data + '\r\n');
     }
