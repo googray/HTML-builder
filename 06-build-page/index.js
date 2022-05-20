@@ -40,7 +40,70 @@ async function mergeCss(srcDr, bundleStyle) {
   }
   // stdout.write('fales bandled');
 }
-//correctly does not work, separate on two func
+
+const components = [];
+
+async function componentReader(srcFile) {
+  return new Promise((res, rej) => {
+    let codeLines = '';
+    const readableStream = fs.createReadStream(srcFile, 'utf-8');
+    readableStream.on('data', (chunk) => (codeLines += chunk));
+    readableStream.on('error', (err) => rej(err));
+    readableStream.on('end', () => {
+      res({ name: path.basename(srcFile, '.html'), text: codeLines });
+    });
+  });
+}
+
+async function componentCreator(data, components, indexHtml) {
+  components.forEach((component) => {
+    data = data.split(`{{${component.name}}}`).join(component.text);
+  });
+
+  const writableStream = fs.createWriteStream(indexHtml, 'utf-8');
+  writableStream.write(data);
+  stdout.write(`write ${indexHtml}` + '\r\n');
+}
+
+const responces = [];
+async function bundlerHtml(indexHtml, componentDr, templateHtml) {
+  try {
+    const entries = await fsP.readdir(componentDr, { withFileTypes: true });
+    const files = entries.filter((file) => !file.isDirectory());
+    for (let file of files) {
+      const srcFile = path.join(componentDr, file.name);
+      let extensio = path.extname(srcFile);
+      if (extensio === '.html') {
+        try {
+          responces.push(componentReader(srcFile));
+        } catch (err) {
+          stderr.write(`Error components read: ${err}`);
+        }
+      }
+    }
+
+    Promise.allSettled(responces).then((results) => {
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          components.push(result.value);
+        } else {
+          stderr.write(`Error promise components: ${result.reason}`);
+        }
+      });
+      const readableStream = fs.createReadStream(templateHtml, 'utf-8');
+      let codeLines = '';
+
+      readableStream.on('data', (chunk) => (codeLines += chunk));
+      readableStream.on('error', (error) => console.error(`${error}`));
+      readableStream.on('end', () =>
+        componentCreator(codeLines, components, indexHtml)
+      );
+    });
+  } catch (err) {
+    stderr.write(`Error components read: ${err}`);
+  }
+}
+// correctly does not work, separate on two func
 // async function copyDir(srcDr, destDr) {
 //   try {
 //     await fs.mkdir(destDr, { recursive: true });
@@ -58,7 +121,7 @@ async function mergeCss(srcDr, bundleStyle) {
 //       file.isDirectory()
 //         ? await copyDir(srcPath, destPath)
 //         : await fs.copyFile(srcPath, destPath);
-//       stdout.write(`copy ${file.name} -> ${destPath}` + '\r\n');
+//       stdout.write(`copy ${file.name} to ${destPath}` + '\r\n');
 //     }
 //   } catch (err) {
 //     stderr.write(`Error copy dir: ${err}`);
@@ -67,13 +130,10 @@ async function mergeCss(srcDr, bundleStyle) {
 
 async function copyFile(srcPath, destPath) {
   try {
-    const files = await fsP.readdir(srcPath, { withFileTypes: true });
-    for (let file of files) {
+    const entries = await fsP.readdir(srcPath, { withFileTypes: true });
+    for (let file of entries) {
       let srcPathCopy = path.join(srcPath, file.name);
       let destPathCopy = path.join(destPath, file.name);
-
-      // stdout.write(`copy ${file.name} to ${destPathCopy}`);
-
       if (file.isFile()) {
         try {
           await fsP.copyFile(srcPathCopy, destPathCopy);
@@ -105,70 +165,7 @@ async function copyDir(srcDr, destDr) {
   }
 }
 
-const components = [];
-
-async function componentReader(srcFile) {
-  return new Promise((res, rej) => {
-    let codeLines = '';
-    const readableStream = fs.createReadStream(srcFile, 'utf-8');
-    readableStream.on('data', (chunk) => (codeLines += chunk));
-    readableStream.on('error', (err) => rej(err));
-    readableStream.on('end', () => {
-      res({ name: path.basename(srcFile, '.html'), text: codeLines });
-    });
-  });
-}
-
-async function componentCreator(text, components, indexHtml) {
-  components.forEach((component) => {
-    text = text.split(`{{${component.name}}}`).join(component.text);
-  });
-
-  const writableStream = fs.createWriteStream(indexHtml, 'utf-8');
-  writableStream.write(text);
-  stdout.write(`write ${indexHtml}` + '\r\n');
-}
-
-const promises = [];
-async function bundlerHtml(indexHtml, componentDr, templateHtml) {
-  try {
-    const entries = await fsP.readdir(componentDr, { withFileTypes: true });
-    const files = entries.filter((file) => !file.isDirectory());
-    for (let file of files) {
-      const srcFile = path.join(componentDr, file.name);
-      let extensio = path.extname(srcFile);
-      if (extensio === '.html') {
-        try {
-          promises.push(componentReader(srcFile));
-        } catch (err) {
-          stderr.write(`Error components read: ${err}`);
-        }
-      }
-    }
-
-    Promise.allSettled(promises).then((results) => {
-      results.forEach((result) => {
-        if (result.status === 'fulfilled') {
-          components.push(result.value);
-        } else {
-          stderr.write(`Error promise components: ${result.reason}`);
-        }
-      });
-      const readableStream = fs.createReadStream(templateHtml, 'utf-8');
-      let codeLines = '';
-
-      readableStream.on('data', (chunk) => (codeLines += chunk));
-      readableStream.on('error', (error) => console.error(`${error}`));
-      readableStream.on('end', () =>
-        componentCreator(codeLines, components, indexHtml)
-      );
-    });
-  } catch (err) {
-    stderr.write(`Error components read: ${err}`);
-  }
-}
-
-async function buiderHtml() {
+(async function buiderHtml() {
   try {
     await fsP.rm(destDr, { recursive: true, force: true });
 
@@ -183,6 +180,4 @@ async function buiderHtml() {
   } catch (err) {
     stderr.write(`Error remove DR: ${err}`);
   }
-}
-
-buiderHtml();
+})();
