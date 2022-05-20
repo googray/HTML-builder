@@ -171,9 +171,9 @@ async function copyDir(srcDr, destDr) {
 
     try {
       await fsP.mkdir(destDr, { recursive: true });
+      await mergeCss(stylesDr, bundleStyle);
       await bundlerHtml(indexHtml, componentDr, templateHtml);
       await copyDir(assetsDr, assetsDestDr);
-      await mergeCss(stylesDr, bundleStyle);
     } catch (err) {
       stderr.write(`Error create DR: ${err}`);
     }
