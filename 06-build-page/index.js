@@ -50,14 +50,14 @@ async function componentReader(srcFile) {
     readableStream.on('data', (chunk) => (codeLines += chunk));
     readableStream.on('error', (err) => rej(err));
     readableStream.on('end', () => {
-      res({ name: path.basename(srcFile, '.html'), text: codeLines });
+      res({ name: path.basename(srcFile, '.html'), data: codeLines });
     });
   });
 }
 
 async function componentCreator(data, components, indexHtml) {
   components.forEach((component) => {
-    data = data.split(`{{${component.name}}}`).join(component.text);
+    data = data.split(`{{${component.name}}}`).join(component.data);
   });
 
   const writableStream = fs.createWriteStream(indexHtml, 'utf-8');
@@ -103,7 +103,8 @@ async function bundlerHtml(indexHtml, componentDr, templateHtml) {
     stderr.write(`Error components read: ${err}`);
   }
 }
-// correctly does not work, separate on two func
+
+//// correctly does not work, separate on two func
 // async function copyDir(srcDr, destDr) {
 //   try {
 //     await fs.mkdir(destDr, { recursive: true });
@@ -127,6 +128,7 @@ async function bundlerHtml(indexHtml, componentDr, templateHtml) {
 //     stderr.write(`Error copy dir: ${err}`);
 //   }
 // }
+//////////
 
 async function copyFile(srcPath, destPath) {
   try {
@@ -165,7 +167,7 @@ async function copyDir(srcDr, destDr) {
   }
 }
 
-(async function buiderHtml() {
+(async function builderHtml() {
   try {
     await fsP.rm(destDr, { recursive: true, force: true });
 
@@ -181,3 +183,5 @@ async function copyDir(srcDr, destDr) {
     stderr.write(`Error remove DR: ${err}`);
   }
 })();
+
+// copyDir(assetsDr, assetsDestDr);
