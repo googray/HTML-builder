@@ -38,7 +38,7 @@ async function mergeCss(srcDr, bundleStyle) {
   } catch (err) {
     stderr.write(`Error bundle file: ${err}`);
   }
-  // stdout.write('fales bandled');
+  stdout.write('CSS bandled' + '\r\n');
 }
 
 const components = [];
@@ -62,7 +62,7 @@ async function componentCreator(data, components, indexHtml) {
 
   const writableStream = fs.createWriteStream(indexHtml, 'utf-8');
   writableStream.write(data);
-  stdout.write(`write ${indexHtml}` + '\r\n');
+  // stdout.write(`write ${indexHtml}` + '\r\n');
 }
 
 const responces = [];
@@ -102,9 +102,10 @@ async function bundlerHtml(indexHtml, componentDr, templateHtml) {
   } catch (err) {
     stderr.write(`Error components read: ${err}`);
   }
+  stdout.write('HTML bondled' + '\r\n');
 }
 
-//// correctly does not work, separate on two func
+//// correctly does not work, must separate on two func
 // async function copyDir(srcDr, destDr) {
 //   try {
 //     await fs.mkdir(destDr, { recursive: true });
@@ -154,7 +155,6 @@ async function copyFile(srcPath, destPath) {
 async function copyDir(srcDr, destDr) {
   try {
     await fsP.rm(destDr, { recursive: true, force: true });
-
     try {
       await fsP.mkdir(destDr, { recursive: true });
 
@@ -165,6 +165,7 @@ async function copyDir(srcDr, destDr) {
   } catch (err) {
     stderr.write(`Error remove dir: ${err}`);
   }
+  stdout.write('Assets copied' + '\r\n');
 }
 
 (async function builderHtml() {
